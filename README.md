@@ -75,10 +75,23 @@ Configuration lives behind the *Settings* button next to the plugin.
 
 ### Why the per-subscriber listing is off by default
 
-`csubSessionTable` holds one row per subscriber. On a BRAS with tens of thousands of
-sessions the walk is slow enough to hold up the poller. The plugin therefore only
-walks a subset of columns (`type`, `state`, `username`, `mac`, `ip`), and only once an
-operator turns it on. When enabling it, keep the cache TTL high (300 s or more).
+`csubSessionTable` holds one row per subscriber. The plugin walks five of its columns
+(`type`, `state`, `username`, `mac`, `ip`), so a BRAS with tens of thousands of
+sessions means tens of thousands of varbinds per column.
+
+Two things to be aware of, neither of which touches the LibreNMS poller process:
+
+- the walk runs while the page renders, so the page blocks until the BRAS answers,
+- the BRAS carries that SNMP load on top of its regular poll.
+
+The walk only runs when you open a device detail, never for the device list or the
+overview panel. When enabling it, keep the cache TTL high (300 s or more).
+
+Check the device supports the MIB before enabling, starting with your smallest BRAS:
+
+```bash
+snmpbulkwalk -v2c -c <community> <bras-ip> .1.3.6.1.4.1.9.9.786.1.1.1.1.24 | head
+```
 
 ## OIDs used
 

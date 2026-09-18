@@ -93,8 +93,10 @@
                         </label>
                     </div>
                     <span class="help-block text-warning">
-                        Off by default. This walks one row per subscriber, so on a BRAS with tens of thousands
-                        of sessions it is slow and can hold up the poller. Keep the cache TTL high when enabling it.
+                        Off by default, and only used when you open a device detail on the plugin page.
+                        It walks five columns with one row per subscriber, so the page blocks until the
+                        BRAS answers and the device carries extra SNMP load alongside its regular poll.
+                        Keep the cache TTL high when enabling it.
                     </span>
                 </div>
             </div>
