@@ -40,11 +40,36 @@ snmpwalk -v2c -c <community> <bras-ip> .1.3.6.1.4.1.9.9.194.1.1.1.0
 
 ## Installation
 
+The plugin is a v2 **local plugin**: it lives in `app/Plugins/` and the directory must
+be named exactly `CiscoPppoe`, because LibreNMS derives the plugin name from it.
+
 > [!IMPORTANT]
 > Do not use `/data/plugins`. In `librenms/docker` that path maps to `html/plugins/`,
 > which is the **legacy v1** plugin system. v2 plugins live in `app/Plugins/`.
 
-Clone on the Docker host and bind mount it into the container:
+No cache clearing is needed. LibreNMS scans `app/Plugins/*/*.php` on every request, the
+plugin registers no routes or config, blade views recompile when their source changes,
+and its classes load through the existing `App\` PSR-4 rule.
+
+### Standard install
+
+For a package or git install, the default being `/opt/librenms` owned by `librenms`:
+
+```bash
+cd /opt/librenms/app/Plugins
+sudo -u librenms git clone https://github.com/jozefrebjak/librenms-plugin-cisco-pppoe.git CiscoPppoe
+```
+
+Cloning as the `librenms` user gets the ownership right in one step. If you cloned as
+root, fix it:
+
+```bash
+chown -R librenms:librenms /opt/librenms/app/Plugins/CiscoPppoe
+```
+
+### Docker
+
+Clone on the host and bind mount it into the container:
 
 ```bash
 git clone https://github.com/jozefrebjak/librenms-plugin-cisco-pppoe.git \
@@ -68,15 +93,30 @@ not need mounting into `dispatcher`.
 ```bash
 cd /opt/librenms
 docker compose up -d librenms
-docker compose exec -u librenms librenms php artisan optimize:clear
 ```
 
-> [!WARNING]
-> Run artisan as the `librenms` user. As root it aborts, and can leave root-owned
-> files in `bootstrap/cache` that break the web UI until you `chown` them back.
+### Enable it
 
 Enable the plugin under **Overview → Plugins**, then configure it with the *Settings*
 button next to it.
+
+### Updating
+
+```bash
+# standard install
+sudo -u librenms git -C /opt/librenms/app/Plugins/CiscoPppoe pull
+
+# docker
+git -C /opt/librenms/plugins/CiscoPppoe pull
+```
+
+Blade and PHP changes are picked up on the next request, nothing else to do.
+
+### Uninstalling
+
+Disable the plugin in the UI first, then remove the directory (or the bind mount).
+Custom OIDs it registered are left behind on purpose, so no RRD history is lost —
+remove those under *Device → Edit → Custom OID* if you no longer want them.
 
 ## Settings
 
@@ -117,15 +157,27 @@ every sub-interface, which buries the handful that carry sessions.
 ### Optional: collect in the background
 
 If you want the subscriber listing ready without clicking, run the warm-cache script
-from cron on the Docker host, at an interval shorter than the cache TTL:
+from cron at an interval shorter than the cache TTL.
+
+Standard install, as `/etc/cron.d/librenms-cisco-pppoe`:
+
+```cron
+*/5 * * * * librenms /usr/bin/php /opt/librenms/app/Plugins/CiscoPppoe/bin/warm-cache.php >/dev/null 2>&1
+```
+
+Docker, in the host's crontab:
 
 ```cron
 */5 * * * * cd /opt/librenms && docker compose exec -T -u librenms librenms php /opt/librenms/app/Plugins/CiscoPppoe/bin/warm-cache.php >/dev/null 2>&1
 ```
 
-Try it by hand first:
+Try it by hand first — it prints what it collected and how long each device took:
 
 ```bash
+# standard install
+sudo -u librenms php /opt/librenms/app/Plugins/CiscoPppoe/bin/warm-cache.php
+
+# docker
 cd /opt/librenms
 docker compose exec -T -u librenms librenms php /opt/librenms/app/Plugins/CiscoPppoe/bin/warm-cache.php
 ```
@@ -222,11 +274,16 @@ The full annotated list is in [`Support/Oids.php`](Support/Oids.php).
 <details>
 <summary>The plugin does not appear in the UI</summary>
 
-```bash
-docker compose exec -u librenms librenms php artisan optimize:clear
-```
+Check the directory name is exactly `CiscoPppoe` and that it sits in `app/Plugins/`.
+Check the file names too — the structure is case sensitive and validated before
+install.
 
-Check the file names. The structure is case sensitive and validated before install.
+Then check ownership. If the web process cannot read the files, the plugin is simply
+not found:
+
+```bash
+ls -la /opt/librenms/app/Plugins/CiscoPppoe
+```
 
 </details>
 
@@ -234,9 +291,13 @@ Check the file names. The structure is case sensitive and validated before insta
 <summary>The settings page shows "Missing view"</summary>
 
 The settings hook returned nothing, which normally means `authorize()` returned false
-or the hook threw. Check `logs/librenms.log`, and turn on plugin errors:
+or the hook threw. Turn on plugin errors and read `logs/librenms.log`:
 
 ```bash
+# standard install
+sudo -u librenms /opt/librenms/lnms config:set plugins.show_errors true
+
+# docker
 docker compose exec -u librenms librenms php artisan config:set plugins.show_errors true
 ```
 
@@ -247,6 +308,27 @@ docker compose exec -u librenms librenms php artisan config:set plugins.show_err
 
 LibreNMS disables a plugin that throws. Enable `plugins.show_errors` as above and read
 `logs/librenms.log`.
+
+</details>
+
+<details>
+<summary>The UI broke after running artisan</summary>
+
+Running artisan as root aborts, but not before it can create root-owned files in
+`bootstrap/cache` and `storage`. The web process then cannot rewrite them and the UI
+fails, typically with assets not loading.
+
+```bash
+# docker
+docker compose exec -u root librenms chown -R librenms:librenms \
+  /opt/librenms/bootstrap/cache /opt/librenms/storage
+docker compose restart librenms
+
+# standard install
+sudo chown -R librenms:librenms /opt/librenms/bootstrap/cache /opt/librenms/storage
+```
+
+This plugin never needs a cache clear, so there is no reason to run artisan for it.
 
 </details>
 
