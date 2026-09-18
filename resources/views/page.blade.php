@@ -38,9 +38,9 @@
                 @foreach ($rows as $row)
                     <tr @class(['info' => $row['selected']])>
                         <td>
-                            <a href="{{ $row['device_url'] }}">{{ $row['name'] }}</a>
-                            @if ($row['hostname'] !== $row['name'])
-                                <small class="text-muted">{{ $row['hostname'] }}</small>
+                            <a href="{{ $row['device_url'] }}">{{ $row['display'] }}</a>
+                            @if ($row['secondary'])
+                                <small class="text-muted">{{ $row['secondary'] }}</small>
                             @endif
                         </td>
                         @if (! $row['statistics']['available'])
@@ -83,20 +83,33 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <strong>
-                <a href="{{ $selected['device_url'] }}">{{ $selected['name'] }}</a>
+                <a href="{{ $selected['device_url'] }}">{{ $selected['display'] }}</a>
                 &mdash; sessions per interface
             </strong>
             <span class="pull-right">
+                @if ($selected['show_all_interfaces'])
+                    showing all {{ $selected['interface_count'] }} interfaces
+                    &middot; <a href="{{ $selected['toggle_interfaces_url'] }}">only with sessions</a>
+                @elseif ($selected['hidden_interfaces'])
+                    {{ $selected['hidden_interfaces'] }} idle interface(s) hidden
+                    &middot; <a href="{{ $selected['toggle_interfaces_url'] }}">show all</a>
+                @endif
+                &middot;
                 <a href="{{ $selected['refresh_url'] }}">Refresh</a>
                 &middot;
                 <a href="{{ $base_url }}">Close</a>
             </span>
         </div>
 
-        @if (empty($selected['statistics']['interfaces']))
+        @if (empty($selected['interfaces']))
             <div class="panel-body">
                 <span class="text-muted">
-                    {{ $selected['statistics']['error'] ?? 'Device returned no per-interface PPPoE data.' }}
+                    @if ($selected['interface_count'])
+                        None of the {{ $selected['interface_count'] }} interfaces carry PPPoE sessions.
+                        <a href="{{ $selected['toggle_interfaces_url'] }}">Show all anyway</a>.
+                    @else
+                        {{ $selected['statistics']['error'] ?? 'Device returned no per-interface PPPoE data.' }}
+                    @endif
                 </span>
             </div>
         @else
@@ -114,9 +127,14 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($selected['statistics']['interfaces'] as $interface)
+                    @foreach ($selected['interfaces'] as $interface)
                         <tr>
-                            <td>{{ $interface['name'] }}</td>
+                            <td>
+                                {{ $interface['name'] }}
+                                @if ($interface['alias'])
+                                    <small class="text-muted">{{ $interface['alias'] }}</small>
+                                @endif
+                            </td>
                             <td class="text-right">{{ $interface['ifIndex'] }}</td>
                             <td class="text-right">{{ number_format($interface['total']) }}</td>
                             <td class="text-right">{{ number_format($interface['pta']) }}</td>

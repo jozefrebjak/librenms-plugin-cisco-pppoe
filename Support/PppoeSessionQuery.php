@@ -209,13 +209,14 @@ final class PppoeSessionQuery
             return [];
         }
 
-        $portNames = $this->portNames($device, array_keys($rows));
+        $ports = $this->ports($device, array_keys($rows));
         $interfaces = [];
 
         foreach ($rows as $ifIndex => $columns) {
             $interface = [
                 'ifIndex' => (int) $ifIndex,
-                'name' => $portNames[(int) $ifIndex] ?? "ifIndex $ifIndex",
+                'name' => $ports[(int) $ifIndex]['name'] ?? "ifIndex $ifIndex",
+                'alias' => $ports[(int) $ifIndex]['alias'] ?? null,
             ];
 
             foreach (Oids::PER_INTERFACE_COLUMNS as $column => $key) {
@@ -231,22 +232,27 @@ final class PppoeSessionQuery
     }
 
     /**
+     * Interface name and description for the given ifIndexes, keyed by ifIndex.
+     *
      * @param  array<int, string>  $ifIndexes
-     * @return array<int, string>
+     * @return array<int, array{name: string, alias: string|null}>
      */
-    private function portNames(Device $device, array $ifIndexes): array
+    private function ports(Device $device, array $ifIndexes): array
     {
-        $names = [];
+        $ports = [];
 
-        $ports = $device->ports()
+        $found = $device->ports()
             ->whereIn('ifIndex', array_map('intval', $ifIndexes))
             ->get(['ifIndex', 'ifName', 'ifDescr', 'ifAlias']);
 
-        foreach ($ports as $port) {
-            $names[(int) $port->ifIndex] = (string) ($port->ifName ?: $port->ifDescr ?: "ifIndex $port->ifIndex");
+        foreach ($found as $port) {
+            $ports[(int) $port->ifIndex] = [
+                'name' => (string) ($port->ifName ?: $port->ifDescr ?: "ifIndex $port->ifIndex"),
+                'alias' => trim((string) $port->ifAlias) ?: null,
+            ];
         }
 
-        return $names;
+        return $ports;
     }
 
     /**

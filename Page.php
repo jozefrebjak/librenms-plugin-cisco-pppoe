@@ -61,13 +61,14 @@ class Page extends PageHook
 
             $rows[] = [
                 'device' => $device,
-                // On a BRAS the hostname is often the management IP, so lead with
-                // sysName and keep the hostname as the secondary label.
-                'name' => $device->sysName ?: $device->hostname,
-                'hostname' => $device->hostname,
+                // Honour the instance wide device_display_default template instead of
+                // picking a field ourselves. Device::name() adds whichever of hostname
+                // or sysName the display string does not already contain.
+                'display' => $device->display ?: $device->hostname,
+                'secondary' => $device->name(),
                 'statistics' => $statistics,
                 'device_url' => url('device/' . $device->device_id),
-                'detail_url' => url('plugin/CiscoPppoe?device=' . $device->device_id),
+                'detail_url' => $this->pageUrl(['device' => $device->device_id]),
                 'selected' => $selectedDevice !== null && (int) $device->device_id === (int) $selectedDevice->device_id,
             ];
         }
@@ -78,16 +79,54 @@ class Page extends PageHook
             'title' => 'Cisco PPPoE Sessions',
             'rows' => $rows,
             'totals' => $totals,
-            'base_url' => url('plugin/CiscoPppoe'),
-            'selected' => $selectedDevice === null ? null : [
-                'device' => $selectedDevice,
-                'name' => $selectedDevice->sysName ?: $selectedDevice->hostname,
-                'device_url' => url('device/' . $selectedDevice->device_id),
-                'refresh_url' => url('plugin/CiscoPppoe?device=' . $selectedDevice->device_id . '&refresh=1'),
-                'statistics' => Presenter::decorate($query->statistics($selectedDevice)),
-                'sessions' => $query->sessions($selectedDevice),
-            ],
+            'base_url' => $this->pageUrl(),
+            'selected' => $selectedDevice === null ? null : $this->selectedDeviceData($selectedDevice, $query),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function selectedDeviceData(Device $device, PppoeSessionQuery $query): array
+    {
+        $statistics = Presenter::decorate($query->statistics($device));
+        $interfaces = $statistics['interfaces'];
+
+        // The per-interface table covers every ifIndex the BRAS knows about, which on
+        // an ASR1000 is mostly sub-interfaces carrying no sessions at all. Hide those
+        // by default, they bury the handful of interfaces that matter.
+        $showAll = request()->boolean('all');
+        $visible = $showAll
+            ? $interfaces
+            : array_filter($interfaces, static fn (array $interface): bool => $interface['total'] > 0);
+
+        $deviceParameters = ['device' => $device->device_id] + ($showAll ? ['all' => 1] : []);
+
+        return [
+            'device' => $device,
+            'display' => $device->display ?: $device->hostname,
+            'device_url' => url('device/' . $device->device_id),
+            'refresh_url' => $this->pageUrl($deviceParameters + ['refresh' => 1]),
+            'toggle_interfaces_url' => $this->pageUrl(
+                ['device' => $device->device_id] + ($showAll ? [] : ['all' => 1])
+            ),
+            'statistics' => $statistics,
+            'interfaces' => $visible,
+            'interface_count' => count($interfaces),
+            'hidden_interfaces' => count($interfaces) - count($visible),
+            'show_all_interfaces' => $showAll,
+            'sessions' => $query->sessions($device),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $parameters
+     */
+    private function pageUrl(array $parameters = []): string
+    {
+        $url = url('plugin/CiscoPppoe');
+
+        return $parameters === [] ? $url : $url . '?' . http_build_query($parameters);
     }
 
     /**
