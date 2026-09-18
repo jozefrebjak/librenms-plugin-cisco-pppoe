@@ -114,7 +114,7 @@ are reference material and are never loaded at runtime.
 
 | OID | Object |
 |---|---|
-| `.1.3.6.1.4.1.9.9.786.1.1.1.1.1` | `csubSessionType` (PPPoE = 4) |
+| `.1.3.6.1.4.1.9.9.786.1.1.1.1.1` | `csubSessionType` (PPPoE = 4, confirmed on IOS-XE 15.5(3)S) |
 | `.1.3.6.1.4.1.9.9.786.1.1.1.1.3` | `csubSessionState` (other 1, pending 2, up 3) |
 | `.1.3.6.1.4.1.9.9.786.1.1.1.1.10` | `csubSessionMacAddress` |
 | `.1.3.6.1.4.1.9.9.786.1.1.1.1.13` | `csubSessionNativeIpAddr` |
