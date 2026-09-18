@@ -55,7 +55,7 @@ does not need to be mounted into `dispatcher`.
 ```bash
 cd /opt/librenms
 docker compose up -d librenms
-docker compose exec librenms php artisan optimize:clear
+docker compose exec -u librenms librenms php artisan optimize:clear
 ```
 
 Then enable it in the UI under **Overview → Plugins** (or **Settings → Plugins**).
@@ -142,7 +142,7 @@ mibs/                                    reference MIB files, not a runtime depe
 **The plugin does not show up in the UI**
 
 ```bash
-docker compose exec librenms php artisan optimize:clear
+docker compose exec -u librenms librenms php artisan optimize:clear
 ```
 
 Check the file names — the structure is case sensitive and is validated before the
@@ -153,7 +153,7 @@ plugin can be installed.
 LibreNMS disables a plugin that throws. Turn on error reporting:
 
 ```bash
-docker compose exec librenms php artisan config:set plugins.show_errors true
+docker compose exec -u librenms librenms php artisan config:set plugins.show_errors true
 ```
 
 then check `logs/librenms.log`.

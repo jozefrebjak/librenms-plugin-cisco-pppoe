@@ -10,16 +10,24 @@
 namespace App\Plugins\CiscoPppoe;
 
 use App\Models\Device;
-use App\Models\User;
 use App\Plugins\CiscoPppoe\Support\BrasDeviceSelector;
 use App\Plugins\CiscoPppoe\Support\PluginSettings;
 use App\Plugins\Hooks\SettingsHook;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 class Settings extends SettingsHook
 {
-    public function authorize(User $user): bool
+    /**
+     * Type hinted as Authenticatable, not as App\Models\User.
+     *
+     * LibreNMS resolves hook arguments through the service container, and the User
+     * model is not bound there, so a User type hint would hand us a fresh empty
+     * model whose can() always returns false. Authenticatable is bound to the
+     * logged in user.
+     */
+    public function authorize(Authenticatable $user): bool
     {
-        return $user->can('admin');
+        return $user->can('plugin.admin');
     }
 
     /**
