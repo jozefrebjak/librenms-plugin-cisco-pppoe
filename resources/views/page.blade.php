@@ -182,11 +182,14 @@
             </div>
         @elseif (! $selected['sessions']['collected'])
             <div class="panel-body">
+                <p>
+                    <a href="{{ $selected['live_url'] }}" class="btn btn-primary">Poll the BRAS now</a>
+                </p>
                 <span class="text-muted">
-                    Not collected yet. This listing is never fetched while the page loads, so it
-                    either comes from the warm-cache cron or from
-                    <a href="{{ $selected['live_url'] }}">polling the BRAS now</a>, which takes a
-                    few seconds.
+                    This listing is never fetched while the page loads, so opening a device never
+                    waits on SNMP. Polling takes a few seconds and the result is kept for the
+                    configured cache TTL. Set up the warm-cache cron if you would rather have it
+                    ready without clicking.
                 </span>
             </div>
         @elseif (! $selected['sessions']['available'])
