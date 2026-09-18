@@ -18,6 +18,16 @@
                 @endforeach
             </div>
 
+            <div class="row" style="margin-top: 6px;">
+                <div class="col-xs-12 text-center">
+                    <small class="text-muted">
+                        @foreach ($glossary_short as $term => $meaning)
+                            <strong>{{ $term }}</strong> {{ $meaning }}@if (! $loop->last) &middot; @endif
+                        @endforeach
+                    </small>
+                </div>
+            </div>
+
             @if ($statistics['limit'])
                 <div class="row" style="margin-top: 10px;">
                     <div class="col-xs-12">

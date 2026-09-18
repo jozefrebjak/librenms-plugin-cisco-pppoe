@@ -79,8 +79,9 @@
 
         <div class="panel-footer">
             <small class="text-muted">
+                <strong>Legend</strong>
                 @foreach (['PTA', 'FWDED', 'TRANS'] as $term)
-                    <strong>{{ $term }}</strong> {{ $glossary[$term] }}@if (! $loop->last)<br>@endif
+                    <br><strong>{{ $term }}</strong> &mdash; {{ $glossary[$term] }}
                 @endforeach
             </small>
         </div>

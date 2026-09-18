@@ -29,6 +29,20 @@ final class Presenter
     ];
 
     /**
+     * Same terms in a few words, for places where a full sentence does not fit.
+     *
+     * The v1 layout does not initialise Bootstrap tooltips, so a title attribute
+     * alone is easy to miss. These short forms get rendered as visible text.
+     *
+     * @var array<string, string>
+     */
+    public const GLOSSARY_SHORT = [
+        'PTA' => 'terminated here',
+        'FWDED' => 'forwarded to an LNS',
+        'TRANS' => 'still negotiating',
+    ];
+
+    /**
      * Bootstrap contextual class for a session utilisation percentage.
      */
     public static function utilizationClass(?float $utilization): string

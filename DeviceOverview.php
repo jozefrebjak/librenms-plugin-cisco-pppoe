@@ -52,6 +52,7 @@ class DeviceOverview extends DeviceOverviewHook
             'device' => $device,
             'statistics' => Presenter::decorate($statistics),
             'glossary' => Presenter::GLOSSARY,
+            'glossary_short' => Presenter::GLOSSARY_SHORT,
             'url' => url('plugin/CiscoPppoe?device=' . $device->device_id),
         ];
     }
