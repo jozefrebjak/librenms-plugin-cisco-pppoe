@@ -40,13 +40,23 @@ class Settings extends SettingsHook
         // because SettingsHook::handle() invokes data() twice.
         $pluginSettings = PluginSettings::fromArray($settings);
         $selector = new BrasDeviceSelector($pluginSettings);
+        $matched = $selector->devices();
 
         return [
             'settings' => $pluginSettings->all(),
             'selection_auto' => PluginSettings::SELECTION_AUTO,
             'selection_manual' => PluginSettings::SELECTION_MANUAL,
             'session_limit_max' => PluginSettings::SESSION_LIMIT_MAX,
-            'matched_devices' => $selector->count(),
+            'matched_devices' => $matched->count(),
+            // Show what the saved settings actually resolve to, so the operator does
+            // not have to open the plugin page to find out whether a filter is right.
+            'matched_device_list' => $matched
+                ->map(static fn (Device $device): array => [
+                    'display' => $device->display ?: $device->hostname,
+                    'secondary' => $device->name(),
+                    'url' => url('device/' . $device->device_id),
+                ])
+                ->all(),
             'selectable_devices' => $selector->selectableDevices()
                 ->map(static fn (Device $device): array => [
                     'device_id' => (int) $device->device_id,

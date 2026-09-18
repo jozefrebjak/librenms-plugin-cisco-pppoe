@@ -70,6 +70,31 @@
             </div>
 
             <div class="form-group">
+                <label class="col-sm-3 control-label">Currently matching</label>
+                <div class="col-sm-6">
+                    @if (empty($matched_device_list))
+                        <p class="form-control-static text-danger">
+                            No devices match the saved settings.
+                        </p>
+                    @else
+                        <ul class="list-unstyled form-control-static" style="margin-bottom: 0;">
+                            @foreach ($matched_device_list as $matched)
+                                <li>
+                                    <a href="{{ $matched['url'] }}">{{ $matched['display'] }}</a>
+                                    @if ($matched['secondary'])
+                                        <small class="text-muted">{{ $matched['secondary'] }}</small>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                    <span class="help-block">
+                        What the saved settings resolve to right now. Save to refresh this list.
+                    </span>
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label class="col-sm-3 control-label" for="cache_ttl">Cache TTL (seconds)</label>
                 <div class="col-sm-3">
                     <input type="number" class="form-control" id="cache_ttl" name="settings[cache_ttl]"
