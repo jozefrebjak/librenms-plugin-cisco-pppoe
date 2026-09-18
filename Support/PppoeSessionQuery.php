@@ -68,25 +68,60 @@ final class PppoeSessionQuery
     /**
      * Session counters for one device.
      *
-     * @return array<string, mixed>
-     */
-    public function statistics(Device $device): array
-    {
-        return $this->remember("stats:{$device->device_id}", fn (): array => $this->fetchStatistics($device));
-    }
-
-    /**
-     * Per-subscriber listing for one device, empty unless enabled in the settings.
+     * Cheap enough to collect on demand: one snmpget plus one walk of the physical
+     * interfaces, so a cold cache costs a page load very little.
      *
      * @return array<string, mixed>
      */
-    public function sessions(Device $device): array
+    public function statistics(Device $device, bool $live = false): array
+    {
+        $key = "stats:{$device->device_id}";
+
+        if ($live) {
+            return $this->store($key, $this->fetchStatistics($device));
+        }
+
+        return $this->remember($key, fn (): array => $this->fetchStatistics($device));
+    }
+
+    /**
+     * Per-subscriber listing for one device.
+     *
+     * Read from cache only. This is the one query heavy enough that a page load
+     * must never wait for it, so an empty cache reports "not collected" and leaves
+     * it to the operator button or the warm-cache script to fill in.
+     *
+     * @return array<string, mixed>
+     */
+    public function sessions(Device $device, bool $live = false): array
     {
         if (! $this->settings->sessionWalkEnabled()) {
             return $this->emptySessions(enabled: false);
         }
 
-        return $this->remember("sessions:{$device->device_id}", fn (): array => $this->fetchSessions($device));
+        $key = "sessions:{$device->device_id}";
+
+        if ($live) {
+            return $this->store($key, $this->fetchSessions($device));
+        }
+
+        $cached = Cache::get($this->cacheKey($key));
+
+        return is_array($cached) ? $cached : $this->emptySessions(enabled: true, collected: false);
+    }
+
+    /**
+     * Collect everything for a device and put it in the cache.
+     *
+     * Used by bin/warm-cache.php so the pages have data waiting for them.
+     */
+    public function warm(Device $device): void
+    {
+        $this->statistics($device, live: true);
+
+        if ($this->settings->sessionWalkEnabled()) {
+            $this->sessions($device, live: true);
+        }
     }
 
     /**
@@ -309,6 +344,7 @@ final class PppoeSessionQuery
 
         return [
             'enabled' => true,
+            'collected' => true,
             'available' => true,
             'error' => null,
             'total' => count($rows),
@@ -389,10 +425,11 @@ final class PppoeSessionQuery
     /**
      * @return array<string, mixed>
      */
-    private function emptySessions(bool $enabled, ?string $error = null): array
+    private function emptySessions(bool $enabled, ?string $error = null, bool $collected = true): array
     {
         return [
             'enabled' => $enabled,
+            'collected' => $collected,
             'available' => false,
             'error' => $error,
             'total' => 0,
@@ -416,6 +453,23 @@ final class PppoeSessionQuery
         }
 
         return Cache::remember($this->cacheKey($key), $ttl, $callback);
+    }
+
+    /**
+     * Put a freshly collected result in the cache and hand it back.
+     *
+     * @param  array<string, mixed>  $value
+     * @return array<string, mixed>
+     */
+    private function store(string $key, array $value): array
+    {
+        $ttl = $this->settings->cacheTtl();
+
+        if ($ttl > 0) {
+            Cache::put($this->cacheKey($key), $value, $ttl);
+        }
+
+        return $value;
     }
 
     private function cacheKey(string $key): string

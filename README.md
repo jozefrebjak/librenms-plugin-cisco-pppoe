@@ -61,6 +61,44 @@ docker compose exec -u librenms librenms php artisan optimize:clear
 Then enable it in the UI under **Overview → Plugins** (or **Settings → Plugins**).
 Configuration lives behind the *Settings* button next to the plugin.
 
+## Keeping the pages instant
+
+LibreNMS v2 plugin hooks are UI only — there is no poller hook a local plugin can
+implement — so nothing collects data on a schedule out of the box. The plugin
+handles that as follows:
+
+| Data | When it is collected |
+|---|---|
+| Session counters (overview panel, device list) | On demand when the cache is cold. One snmpget plus one walk of the physical interfaces, so it is cheap. |
+| Per-subscriber listing | Never while a page renders. Read from cache only. |
+
+That means the subscriber listing shows *Not collected yet* until something fills
+the cache. Two ways to do that:
+
+- **Poll now** — the button on the device detail. The BRAS is queried right there,
+  so that one request waits a few seconds.
+- **The warm-cache cron** — recommended. Collect everything in the background and
+  the pages only ever read the cache.
+
+### Warm-cache cron
+
+On the Docker host, with the interval shorter than the plugin's cache TTL:
+
+```cron
+*/5 * * * * cd /opt/librenms && docker compose exec -T -u librenms librenms php /opt/librenms/app/Plugins/CiscoPppoe/bin/warm-cache.php >/dev/null 2>&1
+```
+
+Run it by hand first to see what it collects:
+
+```bash
+cd /opt/librenms
+docker compose exec -T -u librenms librenms php /opt/librenms/app/Plugins/CiscoPppoe/bin/warm-cache.php
+```
+
+Set the **Cache TTL** to at least twice the cron interval — with a five minute cron,
+600 seconds. A shorter TTL lets entries expire between runs and the pages fall back
+to *Not collected yet*.
+
 ## Settings
 
 | Setting | Default | Description |

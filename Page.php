@@ -45,10 +45,6 @@ class Page extends PageHook
         $devices = $selector->devices();
         $selectedDevice = $this->selectedDevice($devices, (int) request('device'));
 
-        if ($selectedDevice !== null && request()->boolean('refresh')) {
-            $query->forget($selectedDevice);
-        }
-
         $rows = [];
         $totals = ['total' => 0, 'pta' => 0, 'fwded' => 0, 'trans' => 0];
 
@@ -91,7 +87,12 @@ class Page extends PageHook
      */
     private function selectedDeviceData(Device $device, PppoeSessionQuery $query): array
     {
-        $statistics = Presenter::decorate($query->statistics($device));
+        // Only an explicit click talks to the BRAS. Everything else reads whatever
+        // the last collection left in the cache, so opening a device never waits on
+        // SNMP.
+        $live = request()->boolean('live');
+
+        $statistics = Presenter::decorate($query->statistics($device, $live));
         $interfaces = $statistics['interfaces'];
 
         // The per-interface table covers every ifIndex the BRAS knows about, which on
@@ -108,7 +109,7 @@ class Page extends PageHook
             'device' => $device,
             'display' => $device->display ?: $device->hostname,
             'device_url' => url('device/' . $device->device_id),
-            'refresh_url' => $this->pageUrl($deviceParameters + ['refresh' => 1]),
+            'live_url' => $this->pageUrl($deviceParameters + ['live' => 1]),
             'toggle_interfaces_url' => $this->pageUrl(
                 ['device' => $device->device_id] + ($showAll ? [] : ['all' => 1])
             ),
@@ -117,7 +118,8 @@ class Page extends PageHook
             'interface_count' => count($interfaces),
             'hidden_interfaces' => count($interfaces) - count($visible),
             'show_all_interfaces' => $showAll,
-            'sessions' => $query->sessions($device),
+            'sessions' => $query->sessions($device, $live),
+            'polled_at' => $statistics['polled_at'] ?? null,
         ];
     }
 

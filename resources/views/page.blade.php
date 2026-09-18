@@ -104,7 +104,7 @@
                     &middot; <a href="{{ $selected['toggle_interfaces_url'] }}">show all</a>
                 @endif
                 &middot;
-                <a href="{{ $selected['refresh_url'] }}">Refresh</a>
+                <a href="{{ $selected['live_url'] }}" class="btn btn-xs btn-primary">Poll now</a>
                 &middot;
                 <a href="{{ $base_url }}">Close</a>
             </span>
@@ -177,8 +177,16 @@
             <div class="panel-body">
                 <span class="text-muted">
                     The per-subscriber listing is disabled. Enable it under Settings &rarr; Plugins &rarr;
-                    CiscoPppoe. It walks CISCO-SUBSCRIBER-SESSION-MIB, which is slow on a BRAS with
-                    tens of thousands of subscribers.
+                    CiscoPppoe. It walks CISCO-SUBSCRIBER-SESSION-MIB, one row per subscriber.
+                </span>
+            </div>
+        @elseif (! $selected['sessions']['collected'])
+            <div class="panel-body">
+                <span class="text-muted">
+                    Not collected yet. This listing is never fetched while the page loads, so it
+                    either comes from the warm-cache cron or from
+                    <a href="{{ $selected['live_url'] }}">polling the BRAS now</a>, which takes a
+                    few seconds.
                 </span>
             </div>
         @elseif (! $selected['sessions']['available'])
