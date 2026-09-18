@@ -85,7 +85,7 @@ class Settings extends SettingsHook
                     'secondary' => $device->name(),
                     'url' => url('device/' . $device->device_id),
                     'has_custom_oid' => $oidStatus[(int) $device->device_id] ?? false,
-                    'graph_url' => url('device/' . $device->device_id . '/graphs/customoid'),
+                    'graph_url' => CustomOidManager::graphUrl((int) $device->device_id),
                 ])
                 ->all(),
             'selectable_devices' => $selector->selectableDevices()

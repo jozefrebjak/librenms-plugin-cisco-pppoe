@@ -33,6 +33,19 @@ final class CustomOidManager
     private const UNIT = 'sessions';
 
     /**
+     * Link to the Custom OID section of a device's graphs tab.
+     *
+     * LibreNMS only turns a path segment into a variable when it contains an "=",
+     * see Url::parseLegacyPath(), so "graphs/customoid" selects the tab but leaves
+     * the group unset and lands on whichever graph group comes first. This is the
+     * legacy form the LibreNMS UI itself generates.
+     */
+    public static function graphUrl(int $deviceId): string
+    {
+        return url("device/device=$deviceId/tab=graphs/group=customoid/");
+    }
+
+    /**
      * Which of the given devices already have the custom OID.
      *
      * Read only, safe to call while rendering a page.

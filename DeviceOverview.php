@@ -50,7 +50,7 @@ class DeviceOverview extends DeviceOverviewHook
         $hasGraph = (new CustomOidManager)->status(collect([$device]))[(int) $device->device_id] ?? false;
 
         return [
-            'graph_url' => $hasGraph ? url('device/' . $device->device_id . '/graphs/customoid') : null,
+            'graph_url' => $hasGraph ? CustomOidManager::graphUrl((int) $device->device_id) : null,
             'title' => 'PPPoE Sessions',
             'device' => $device,
             'statistics' => Presenter::decorate($statistics),
