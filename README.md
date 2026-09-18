@@ -10,7 +10,9 @@ Adds a session panel to the device overview, a page listing every BRAS with a
 per-interface drill-down, an opt-in per-subscriber listing, and a one-click way to
 register the session count as a LibreNMS custom OID so it gets graphed.
 
-![Device list with per-interface drill-down](docs/page.png)
+![PPPoE panel on the device overview](docs/device-overview.png)
+
+![Device list](docs/page.png)
 
 ## Contents
 
