@@ -29,6 +29,18 @@ final class Presenter
     ];
 
     /**
+     * csubSessionState values, from the SubSessionState textual convention.
+     *
+     * @var array<string, string>
+     */
+    public const SESSION_STATE_GLOSSARY = [
+        'up' => 'Session is established and passing traffic.',
+        'pending' => 'Session is still being brought up, authentication or address assignment is not finished.',
+        'other' => 'Session is in a state the MIB does not name.',
+        'unknown' => 'The BRAS did not report a state for this session.',
+    ];
+
+    /**
      * Same terms in a few words, for places where a full sentence does not fit.
      *
      * The v1 layout does not initialise Bootstrap tooltips, so a title attribute

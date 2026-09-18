@@ -173,6 +173,9 @@ final class SnmpTable
             return null;
         }
 
+        // net-snmp quotes octet strings; LibreNMS normally strips that, but not every
+        // version does, and a stray quote would poison the hex detection below.
+        $value = trim(trim($value), '"');
         $value = trim($value);
 
         if ($value === '') {

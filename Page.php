@@ -80,6 +80,7 @@ class Page extends PageHook
             'rows' => $rows,
             'totals' => $totals,
             'glossary' => Presenter::GLOSSARY,
+            'state_glossary' => Presenter::SESSION_STATE_GLOSSARY,
             'base_url' => $this->pageUrl(),
             'selected' => $selectedDevice === null ? null : $this->selectedDeviceData($selectedDevice, $query),
         ];

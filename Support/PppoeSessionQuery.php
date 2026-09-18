@@ -34,9 +34,26 @@ final class PppoeSessionQuery
      * Columns of csubSessionTable the per-session listing walks.
      *
      * Deliberately a subset of Oids::SESSION_COLUMNS: every entry is one more full
-     * walk of a table that holds one row per subscriber.
+     * walk of a table that holds one row per subscriber. csubSessionMacAddress is
+     * left out because IOS-XE 15.5(3)S returns an empty string for every session,
+     * which is not worth a walk.
      */
-    private const WALKED_SESSION_COLUMNS = ['type', 'state', 'username', 'mac', 'ip'];
+    private const WALKED_SESSION_COLUMNS = ['type', 'state', 'username', 'ip'];
+
+    /**
+     * Columns walked with forced hex output.
+     *
+     * Without the MIB loaded net-snmp guesses how to render an OCTET STRING, so an
+     * InetAddress whose four bytes all happen to be printable comes back as text
+     * rather than hex. Some of those bytes are carriage returns, which do not
+     * survive the line based response parser. Forcing hex removes the guesswork.
+     *
+     * The flags mirror what SnmpQueryOptions::quickPrint() produces, which is what
+     * SnmpQuery uses by default, plus -Ox for hex and -On for numeric OIDs.
+     */
+    private const HEX_SESSION_COLUMNS = ['ip'];
+
+    private const HEX_OUTPUT_FLAGS = '-OQXUtenx';
 
     public function __construct(private readonly PluginSettings $settings)
     {
@@ -264,9 +281,12 @@ final class PppoeSessionQuery
 
         try {
             foreach (self::WALKED_SESSION_COLUMNS as $column) {
-                $response = SnmpQuery::device($device)
-                    ->numeric()
-                    ->walk(Oids::SESSION_COLUMNS[$column]);
+                $query = SnmpQuery::device($device);
+                $query = in_array($column, self::HEX_SESSION_COLUMNS, true)
+                    ? $query->options([self::HEX_OUTPUT_FLAGS])
+                    : $query->numeric();
+
+                $response = $query->walk(Oids::SESSION_COLUMNS[$column]);
 
                 if (! $response->isValid(ignore_partial: true)) {
                     continue;
@@ -331,7 +351,6 @@ final class PppoeSessionQuery
                 'username' => trim((string) ($columns['username'][$index] ?? '')),
                 'state' => Oids::SESSION_STATES[$state] ?? 'unknown',
                 'state_value' => $state,
-                'mac' => SnmpTable::macAddress($columns['mac'][$index] ?? null),
                 'ip' => SnmpTable::ipAddress($columns['ip'][$index] ?? null),
             ];
         }

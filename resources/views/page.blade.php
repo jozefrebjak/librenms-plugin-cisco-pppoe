@@ -192,7 +192,6 @@
                         <th>Username</th>
                         <th>State</th>
                         <th>IP address</th>
-                        <th>MAC address</th>
                         <th class="text-right">ifIndex</th>
                     </tr>
                 </thead>
@@ -201,20 +200,29 @@
                         <tr>
                             <td>{{ $session['username'] ?: '-' }}</td>
                             <td>
-                                <span @class([
-                                    'label',
-                                    'label-success' => $session['state'] === 'up',
-                                    'label-warning' => $session['state'] === 'pending',
-                                    'label-default' => ! in_array($session['state'], ['up', 'pending'], true),
-                                ])>{{ $session['state'] }}</span>
+                                <span title="{{ $state_glossary[$session['state']] ?? '' }}"
+                                      @class([
+                                          'label',
+                                          'label-success' => $session['state'] === 'up',
+                                          'label-warning' => $session['state'] === 'pending',
+                                          'label-default' => ! in_array($session['state'], ['up', 'pending'], true),
+                                      ])>{{ $session['state'] }}</span>
                             </td>
                             <td>{{ $session['ip'] ?: '-' }}</td>
-                            <td>{{ $session['mac'] ?: '-' }}</td>
                             <td class="text-right">{{ $session['ifIndex'] }}</td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
+
+            <div class="panel-footer">
+                <small class="text-muted">
+                    <strong>State</strong>
+                    @foreach (['up', 'pending', 'other'] as $state)
+                        <br><strong>{{ $state }}</strong> &mdash; {{ $state_glossary[$state] }}
+                    @endforeach
+                </small>
+            </div>
         @endif
     </div>
 @endif
