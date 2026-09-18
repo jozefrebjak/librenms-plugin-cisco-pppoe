@@ -1,0 +1,66 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  php-syntax:
+    name: PHP syntax
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Lint every PHP file
+        run: find . -name '*.php' -not -path './mibs/*' -print0 | xargs -0 -n1 php -l
+
+  structure:
+    name: Plugin structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # LibreNMS validates the layout before it will install a plugin, and the
+      # names are case sensitive.
+      - name: Required files are present
+        run: |
+          set -eu
+          for path in \
+            DeviceOverview.php \
+            Menu.php \
+            Page.php \
+            Settings.php \
+            resources/views/device-overview.blade.php \
+            resources/views/menu.blade.php \
+            resources/views/page.blade.php \
+            resources/views/settings.blade.php
+          do
+            test -f "$path" || { echo "missing $path"; exit 1; }
+          done
+
+      # PluginProvider globs app/Plugins/*/*.php and throws on any class that is
+      # not a hook, so the plugin root must contain hooks and nothing else.
+      - name: Plugin root holds only hook classes
+        run: |
+          set -eu
+          unexpected=$(find . -maxdepth 1 -name '*.php' \
+            -not -name 'DeviceOverview.php' \
+            -not -name 'Menu.php' \
+            -not -name 'Page.php' \
+            -not -name 'PortTab.php' \
+            -not -name 'Settings.php')
+          if [ -n "$unexpected" ]; then
+            echo "Only hook classes may live in the plugin root, found:"
+            echo "$unexpected"
+            exit 1
+          fi

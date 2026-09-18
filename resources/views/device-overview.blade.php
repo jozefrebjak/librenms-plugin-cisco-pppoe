@@ -36,17 +36,19 @@
             @if ($statistics['limit'])
                 <div class="row" style="margin-top: 10px;">
                     <div class="col-xs-12">
-                        <div class="progress" style="margin-bottom: 5px;">
+                        {{-- Label outside the bar: at a fraction of a percent the bar is
+                             too narrow to hold readable text. --}}
+                        <div class="progress" style="margin-bottom: 5px; height: 12px;">
                             <div class="progress-bar progress-bar-{{ $statistics['utilization_class'] }}"
                                  role="progressbar"
                                  aria-valuenow="{{ $statistics['utilization'] }}"
                                  aria-valuemin="0"
                                  aria-valuemax="100"
-                                 style="width: {{ $statistics['utilization_width'] }}%;">
-                                {{ $statistics['utilization'] }}%
+                                 style="width: {{ $statistics['utilization_width'] }}%; min-width: 2px;">
                             </div>
                         </div>
                         <small class="text-muted">
+                            <strong>{{ $statistics['utilization'] }}%</strong> &middot;
                             {{ number_format($statistics['total']) }} /
                             {{ number_format($statistics['limit']) }}
                             {{ $statistics['limit_source'] === 'threshold' ? 'threshold' : 'max allowed' }} sessions
