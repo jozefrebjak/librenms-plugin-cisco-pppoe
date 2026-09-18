@@ -61,6 +61,10 @@ class Page extends PageHook
 
             $rows[] = [
                 'device' => $device,
+                // On a BRAS the hostname is often the management IP, so lead with
+                // sysName and keep the hostname as the secondary label.
+                'name' => $device->sysName ?: $device->hostname,
+                'hostname' => $device->hostname,
                 'statistics' => $statistics,
                 'device_url' => url('device/' . $device->device_id),
                 'detail_url' => url('plugin/CiscoPppoe?device=' . $device->device_id),
@@ -77,6 +81,7 @@ class Page extends PageHook
             'base_url' => url('plugin/CiscoPppoe'),
             'selected' => $selectedDevice === null ? null : [
                 'device' => $selectedDevice,
+                'name' => $selectedDevice->sysName ?: $selectedDevice->hostname,
                 'device_url' => url('device/' . $selectedDevice->device_id),
                 'refresh_url' => url('plugin/CiscoPppoe?device=' . $selectedDevice->device_id . '&refresh=1'),
                 'statistics' => Presenter::decorate($query->statistics($selectedDevice)),

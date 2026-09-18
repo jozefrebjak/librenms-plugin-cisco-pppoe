@@ -23,6 +23,14 @@ final class PppoeSessionQuery
     private const CACHE_PREFIX = 'cisco-pppoe';
 
     /**
+     * Unsigned32 maximum, reported by IOS-XE when no session limit is configured.
+     *
+     * Seen on ASR1000 running 15.5(3)S: cPppoeSystemMaxAllowedSessions returns
+     * 4294967295 rather than the 0 the MIB describes.
+     */
+    private const NO_LIMIT = 4294967295;
+
+    /**
      * Columns of csubSessionTable the per-session listing walks.
      *
      * Deliberately a subset of Oids::SESSION_COLUMNS: every entry is one more full
@@ -105,18 +113,18 @@ final class PppoeSessionQuery
         $interfaceTotal = array_sum(array_column($interfaces, 'total'));
 
         $systemCurrent = isset($scalars['system_current']) ? SnmpTable::integer($scalars['system_current']) : null;
-        $maxAllowed = isset($scalars['max_allowed']) ? SnmpTable::integer($scalars['max_allowed']) : null;
-        $threshold = isset($scalars['threshold']) ? SnmpTable::integer($scalars['threshold']) : null;
+        $maxAllowed = $this->configuredLimit($scalars['max_allowed'] ?? null);
+        $threshold = $this->configuredLimit($scalars['threshold'] ?? null);
 
         // cPppoeSystemMaxAllowedSessions is the real ceiling, the threshold is only
         // the trap watermark, so fall back to it when no limit is configured.
         $limit = null;
         $limitSource = null;
 
-        if ($maxAllowed !== null && $maxAllowed > 0) {
+        if ($maxAllowed !== null) {
             $limit = $maxAllowed;
             $limitSource = 'max';
-        } elseif ($threshold !== null && $threshold > 0) {
+        } elseif ($threshold !== null) {
             $limit = $threshold;
             $limitSource = 'threshold';
         }
@@ -142,6 +150,24 @@ final class PppoeSessionQuery
             'interfaces' => $interfaces,
             'polled_at' => time(),
         ];
+    }
+
+    /**
+     * Read a configured session limit, or null when the BRAS has none.
+     *
+     * The MIB says an unset limit is 0, but IOS-XE also reports the Unsigned32
+     * maximum, which would otherwise render as a 4,294,967,295 session ceiling and
+     * flatten every utilisation bar to zero.
+     */
+    private function configuredLimit(?string $raw): ?int
+    {
+        if ($raw === null) {
+            return null;
+        }
+
+        $limit = SnmpTable::integer($raw);
+
+        return ($limit <= 0 || $limit >= self::NO_LIMIT) ? null : $limit;
     }
 
     /**

@@ -1,3 +1,6 @@
+{{-- layouts.librenmsv1 yields the content without a wrapper, so the plugin has to
+     bring its own container, the same way the core plugin admin page does. --}}
+<div class="container">
 <div class="panel panel-default">
     <div class="panel-heading">
         <strong>{{ $plugin_name }} settings</strong>
@@ -112,4 +115,5 @@
             </div>
         </form>
     </div>
+</div>
 </div>

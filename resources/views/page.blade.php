@@ -1,3 +1,7 @@
+{{-- layouts.librenmsv1 yields the content without a wrapper, so the plugin has to
+     bring its own container, the same way the core plugin admin page does. --}}
+<div class="container-fluid" style="padding-top: 15px;">
+
 <div class="panel panel-default">
     <div class="panel-heading">
         <strong>{{ $title }}</strong>
@@ -34,9 +38,9 @@
                 @foreach ($rows as $row)
                     <tr @class(['info' => $row['selected']])>
                         <td>
-                            <a href="{{ $row['device_url'] }}">{{ $row['device']->hostname }}</a>
-                            @if ($row['device']->sysName && $row['device']->sysName !== $row['device']->hostname)
-                                <small class="text-muted">{{ $row['device']->sysName }}</small>
+                            <a href="{{ $row['device_url'] }}">{{ $row['name'] }}</a>
+                            @if ($row['hostname'] !== $row['name'])
+                                <small class="text-muted">{{ $row['hostname'] }}</small>
                             @endif
                         </td>
                         @if (! $row['statistics']['available'])
@@ -47,17 +51,19 @@
                             <td class="text-right">{{ number_format($row['statistics']['fwded']) }}</td>
                             <td class="text-right">{{ number_format($row['statistics']['trans']) }}</td>
                             <td class="text-right">
-                                {{ $row['statistics']['limit'] ? number_format($row['statistics']['limit']) : '-' }}
+                                {{ $row['statistics']['limit'] ? number_format($row['statistics']['limit']) : 'no limit' }}
                             </td>
                             <td>
                                 @if ($row['statistics']['limit'])
-                                    <div class="progress" style="margin-bottom: 0;">
+                                    {{-- Label sits outside the bar: at a fraction of a
+                                         percent the bar is too narrow to hold text. --}}
+                                    <div class="progress" style="margin-bottom: 2px; height: 10px;">
                                         <div class="progress-bar progress-bar-{{ $row['statistics']['utilization_class'] }}"
                                              role="progressbar"
-                                             style="width: {{ $row['statistics']['utilization_width'] }}%;">
-                                            {{ $row['statistics']['utilization'] }}%
+                                             style="width: {{ $row['statistics']['utilization_width'] }}%; min-width: 2px;">
                                         </div>
                                     </div>
+                                    <small class="text-muted">{{ $row['statistics']['utilization'] }}%</small>
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif
@@ -77,7 +83,7 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <strong>
-                <a href="{{ $selected['device_url'] }}">{{ $selected['device']->hostname }}</a>
+                <a href="{{ $selected['device_url'] }}">{{ $selected['name'] }}</a>
                 &mdash; sessions per interface
             </strong>
             <span class="pull-right">
@@ -183,3 +189,5 @@
         @endif
     </div>
 @endif
+
+</div>
