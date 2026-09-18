@@ -51,6 +51,7 @@ class DeviceOverview extends DeviceOverviewHook
             'title' => 'PPPoE Sessions',
             'device' => $device,
             'statistics' => Presenter::decorate($statistics),
+            'glossary' => Presenter::GLOSSARY,
             'url' => url('plugin/CiscoPppoe?device=' . $device->device_id),
         ];
     }

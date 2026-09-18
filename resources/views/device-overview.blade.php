@@ -8,22 +8,14 @@
             <span class="text-muted">{{ $statistics['error'] ?? 'No PPPoE data available.' }}</span>
         @else
             <div class="row text-center">
-                <div class="col-xs-3">
-                    <div style="font-size: 26px; line-height: 1.1;">{{ number_format($statistics['total']) }}</div>
-                    <small class="text-muted">Active</small>
-                </div>
-                <div class="col-xs-3">
-                    <div style="font-size: 26px; line-height: 1.1;">{{ number_format($statistics['pta']) }}</div>
-                    <small class="text-muted">PTA</small>
-                </div>
-                <div class="col-xs-3">
-                    <div style="font-size: 26px; line-height: 1.1;">{{ number_format($statistics['fwded']) }}</div>
-                    <small class="text-muted">FWDED</small>
-                </div>
-                <div class="col-xs-3">
-                    <div style="font-size: 26px; line-height: 1.1;">{{ number_format($statistics['trans']) }}</div>
-                    <small class="text-muted">TRANS</small>
-                </div>
+                @foreach (['Active' => 'total', 'PTA' => 'pta', 'FWDED' => 'fwded', 'TRANS' => 'trans'] as $label => $key)
+                    <div class="col-xs-3">
+                        <div style="font-size: 26px; line-height: 1.1;">{{ number_format($statistics[$key]) }}</div>
+                        <small class="text-muted">
+                            <abbr title="{{ $glossary[$label] }}">{{ $label }}</abbr>
+                        </small>
+                    </div>
+                @endforeach
             </div>
 
             @if ($statistics['limit'])

@@ -11,6 +11,24 @@ namespace App\Plugins\CiscoPppoe\Support;
 final class Presenter
 {
     /**
+     * What the CISCO-PPPOE-MIB session state abbreviations mean.
+     *
+     * Wording follows the MIB descriptions of cPppoePtaSessions,
+     * cPppoeFwdedSessions and cPppoeTransSessions. Kept in one place so the device
+     * overview panel and the plugin page cannot drift apart.
+     *
+     * @var array<string, string>
+     */
+    public const GLOSSARY = [
+        'Active' => 'All PPPoE sessions currently on the device: PTA plus FWDED plus TRANS.',
+        'PTA' => 'PPP Termination Aggregation — the session terminates on this BRAS and its traffic is routed locally.',
+        'FWDED' => 'Forwarded — the session is not terminated here but handed on, typically over an L2TP tunnel to an LNS.',
+        'TRANS' => 'Transient — the session is still negotiating and is not up yet.',
+        'Limit' => 'Configured session ceiling (cPppoeSystemMaxAllowedSessions), falling back to the trap threshold when no ceiling is set.',
+        'Loss threshold' => 'Low watermark for the interface: when the session count drops below it, the BRAS sends a trap.',
+    ];
+
+    /**
      * Bootstrap contextual class for a session utilisation percentage.
      */
     public static function utilizationClass(?float $utilization): string

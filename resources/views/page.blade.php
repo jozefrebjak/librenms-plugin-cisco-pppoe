@@ -25,11 +25,11 @@
             <thead>
                 <tr>
                     <th>Device</th>
-                    <th class="text-right">Active</th>
-                    <th class="text-right">PTA</th>
-                    <th class="text-right">FWDED</th>
-                    <th class="text-right">TRANS</th>
-                    <th class="text-right">Limit</th>
+                    <th class="text-right"><abbr title="{{ $glossary['Active'] }}">Active</abbr></th>
+                    <th class="text-right"><abbr title="{{ $glossary['PTA'] }}">PTA</abbr></th>
+                    <th class="text-right"><abbr title="{{ $glossary['FWDED'] }}">FWDED</abbr></th>
+                    <th class="text-right"><abbr title="{{ $glossary['TRANS'] }}">TRANS</abbr></th>
+                    <th class="text-right"><abbr title="{{ $glossary['Limit'] }}">Limit</abbr></th>
                     <th style="width: 180px;">Utilisation</th>
                     <th></th>
                 </tr>
@@ -76,6 +76,14 @@
                 @endforeach
             </tbody>
         </table>
+
+        <div class="panel-footer">
+            <small class="text-muted">
+                @foreach (['PTA', 'FWDED', 'TRANS'] as $term)
+                    <strong>{{ $term }}</strong> {{ $glossary[$term] }}@if (! $loop->last)<br>@endif
+                @endforeach
+            </small>
+        </div>
     @endif
 </div>
 
@@ -118,11 +126,13 @@
                     <tr>
                         <th>Interface</th>
                         <th class="text-right">ifIndex</th>
-                        <th class="text-right">Total</th>
-                        <th class="text-right">PTA</th>
-                        <th class="text-right">FWDED</th>
-                        <th class="text-right">TRANS</th>
-                        <th class="text-right">Loss threshold</th>
+                        <th class="text-right"><abbr title="{{ $glossary['Active'] }}">Total</abbr></th>
+                        <th class="text-right"><abbr title="{{ $glossary['PTA'] }}">PTA</abbr></th>
+                        <th class="text-right"><abbr title="{{ $glossary['FWDED'] }}">FWDED</abbr></th>
+                        <th class="text-right"><abbr title="{{ $glossary['TRANS'] }}">TRANS</abbr></th>
+                        <th class="text-right">
+                            <abbr title="{{ $glossary['Loss threshold'] }}">Loss threshold</abbr>
+                        </th>
                         <th class="text-right">Loss %</th>
                     </tr>
                 </thead>

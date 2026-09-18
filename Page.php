@@ -79,6 +79,7 @@ class Page extends PageHook
             'title' => 'Cisco PPPoE Sessions',
             'rows' => $rows,
             'totals' => $totals,
+            'glossary' => Presenter::GLOSSARY,
             'base_url' => $this->pageUrl(),
             'selected' => $selectedDevice === null ? null : $this->selectedDeviceData($selectedDevice, $query),
         ];
