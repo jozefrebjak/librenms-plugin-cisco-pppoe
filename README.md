@@ -163,13 +163,41 @@ The full annotated list is in [`Support/Oids.php`](Support/Oids.php).
 `csubSessionTable` (`.1.3.6.1.4.1.9.9.786.1.1.1`) is `MAX-ACCESS not-accessible`, so
 walking the table OID directly returns nothing — go to the columnar objects instead.
 
-## Custom OID (without the plugin)
+## Session history and graphs
 
-For just a session count graph, add a Custom OID under *Device → Edit → Custom OID*:
+The plugin stores nothing, so on its own it has no history to show. LibreNMS can
+provide that: `poller_modules.customoid` is enabled by default, so anything in the
+`customoids` table gets polled into RRD, graphed and alertable.
+
+Settings has a **Create custom OIDs** button that registers
+`cPppoeSystemCurrSessions` on every matching BRAS. It reads the value from each
+device first and only then marks the entry as checked, so the poller never inherits
+an OID the device does not answer.
+
+It only ever adds. Existing entries, whether created by the plugin or by hand, are
+never modified or deleted, so no RRD history is ever thrown away. Removing an entry
+is a manual job under *Device → Edit → Custom OID*.
+
+Once the poller has run, the graph lives at *Device → Graphs → Custom OID*. The
+plugin links to it from the device overview panel and the settings device list.
+
+### Adding it by hand
+
+The same thing under *Device → Edit → Custom OID*:
 
 - **OID:** `.1.3.6.1.4.1.9.9.194.1.1.1.0`
 - **Data Type:** `GAUGE`
 - **Unit:** `sessions`
+
+Other OIDs worth graphing this way, none of which the button creates:
+
+| Value | OID | Data Type |
+|---|---|---|
+| Highest concurrent count | `.1.3.6.1.4.1.9.9.194.1.1.2.0` | `GAUGE` |
+| Sessions refused at the limit | `.1.3.6.1.4.1.9.9.194.1.1.5.0` | `COUNTER` |
+
+The PTA / FWDED / TRANS split is per interface only, so graphing it would mean one
+custom OID per ifIndex. That is not practical; the plugin shows it live instead.
 
 ## Repository layout
 

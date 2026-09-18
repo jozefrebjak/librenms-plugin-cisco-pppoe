@@ -10,6 +10,7 @@ namespace App\Plugins\CiscoPppoe;
 
 use App\Models\Device;
 use App\Plugins\CiscoPppoe\Support\BrasDeviceSelector;
+use App\Plugins\CiscoPppoe\Support\CustomOidManager;
 use App\Plugins\CiscoPppoe\Support\PluginSettings;
 use App\Plugins\CiscoPppoe\Support\PppoeSessionQuery;
 use App\Plugins\CiscoPppoe\Support\Presenter;
@@ -46,8 +47,10 @@ class DeviceOverview extends DeviceOverviewHook
     public function data(Device $device, array $settings = []): array
     {
         $statistics = PppoeSessionQuery::fromSettings($settings)->statistics($device);
+        $hasGraph = (new CustomOidManager)->status(collect([$device]))[(int) $device->device_id] ?? false;
 
         return [
+            'graph_url' => $hasGraph ? url('device/' . $device->device_id . '/graphs/customoid') : null,
             'title' => 'PPPoE Sessions',
             'device' => $device,
             'statistics' => Presenter::decorate($statistics),

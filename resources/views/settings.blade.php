@@ -84,12 +84,63 @@
                                     @if ($matched['secondary'])
                                         <small class="text-muted">{{ $matched['secondary'] }}</small>
                                     @endif
+                                    @if ($matched['has_custom_oid'])
+                                        <a href="{{ $matched['graph_url'] }}" class="label label-success">graph</a>
+                                    @else
+                                        <span class="label label-default">no graph</span>
+                                    @endif
                                 </li>
                             @endforeach
                         </ul>
                     @endif
                     <span class="help-block">
                         What the saved settings resolve to right now. Save to refresh this list.
+                    </span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Session history</label>
+                <div class="col-sm-6">
+                    @if (! empty($custom_oid_report))
+                        <table class="table table-condensed" style="margin-bottom: 10px;">
+                            @foreach ($custom_oid_report as $result)
+                                <tr>
+                                    <td>{{ $result['device'] }}</td>
+                                    <td>
+                                        <span @class([
+                                            'label',
+                                            'label-success' => $result['state'] === 'created',
+                                            'label-default' => $result['state'] === 'exists',
+                                            'label-danger' => $result['state'] === 'failed',
+                                        ])>{{ $result['state'] }}</span>
+                                    </td>
+                                    <td class="text-muted">{{ $result['detail'] }}</td>
+                                </tr>
+                            @endforeach
+                        </table>
+                    @endif
+
+                    <p class="form-control-static" style="padding-top: 0;">
+                        <a href="{{ $create_custom_oids_url }}"
+                           class="btn {{ $custom_oid_missing ? 'btn-primary' : 'btn-default' }}">
+                            Create custom OIDs
+                        </a>
+                        @if ($custom_oid_missing)
+                            <span class="text-warning">
+                                {{ $custom_oid_missing }} device(s) without one
+                            </span>
+                        @else
+                            <span class="text-success">All matching devices have one</span>
+                        @endif
+                    </p>
+
+                    <span class="help-block">
+                        The plugin keeps no history of its own. This registers
+                        <code>{{ $custom_oid_description }}</code> as a LibreNMS custom OID on every
+                        matching device, which the poller then graphs and can alert on. The value is
+                        read from each device first, and existing entries are never changed or
+                        removed.
                     </span>
                 </div>
             </div>

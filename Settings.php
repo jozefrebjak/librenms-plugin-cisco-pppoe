@@ -11,12 +11,27 @@ namespace App\Plugins\CiscoPppoe;
 
 use App\Models\Device;
 use App\Plugins\CiscoPppoe\Support\BrasDeviceSelector;
+use App\Plugins\CiscoPppoe\Support\CustomOidManager;
 use App\Plugins\CiscoPppoe\Support\PluginSettings;
 use App\Plugins\Hooks\SettingsHook;
 use Illuminate\Contracts\Auth\Authenticatable;
 
 class Settings extends SettingsHook
 {
+    /** Matches the plugin directory name, which is what LibreNMS routes on. */
+    private const PLUGIN_NAME = 'CiscoPppoe';
+
+    /**
+     * Result of the custom OID creation, kept so it survives the second data() call.
+     *
+     * SettingsHook::handle() invokes data() twice and returns the second result. The
+     * first pass would do the creating and the second would report everything as
+     * already present, so the outcome is remembered here instead.
+     *
+     * @var array<int, array{device: string, state: string, detail: string}>|null
+     */
+    private ?array $customOidReport = null;
+
     /**
      * Type hinted as Authenticatable, not as App\Models\User.
      *
@@ -41,8 +56,22 @@ class Settings extends SettingsHook
         $pluginSettings = PluginSettings::fromArray($settings);
         $selector = new BrasDeviceSelector($pluginSettings);
         $matched = $selector->devices();
+        $customOids = new CustomOidManager;
+
+        // The settings form can only post plugin settings, so the button is a link
+        // back to this page. The route already requires the plugin.admin ability.
+        $this->customOidReport ??= request()->boolean('create_custom_oids')
+            ? $customOids->create($matched)
+            : [];
+
+        $report = $this->customOidReport;
+        $oidStatus = $customOids->status($matched);
 
         return [
+            'custom_oid_report' => $report,
+            'custom_oid_description' => CustomOidManager::DESCRIPTION,
+            'custom_oid_missing' => count(array_filter($oidStatus, static fn (bool $present): bool => ! $present)),
+            'create_custom_oids_url' => url('plugin/settings/' . self::PLUGIN_NAME . '?create_custom_oids=1'),
             'settings' => $pluginSettings->all(),
             'selection_auto' => PluginSettings::SELECTION_AUTO,
             'selection_manual' => PluginSettings::SELECTION_MANUAL,
@@ -55,6 +84,8 @@ class Settings extends SettingsHook
                     'display' => $device->display ?: $device->hostname,
                     'secondary' => $device->name(),
                     'url' => url('device/' . $device->device_id),
+                    'has_custom_oid' => $oidStatus[(int) $device->device_id] ?? false,
+                    'graph_url' => url('device/' . $device->device_id . '/graphs/customoid'),
                 ])
                 ->all(),
             'selectable_devices' => $selector->selectableDevices()

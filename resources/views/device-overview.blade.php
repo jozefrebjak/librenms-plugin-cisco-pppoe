@@ -1,7 +1,12 @@
 <div class="panel panel-default panel-condensed">
     <div class="panel-heading">
         <strong>{{ $title }}</strong>
-        <a href="{{ $url }}" class="pull-right">Detail</a>
+        <span class="pull-right">
+            @if ($graph_url)
+                <a href="{{ $graph_url }}">Graph</a> &middot;
+            @endif
+            <a href="{{ $url }}">Detail</a>
+        </span>
     </div>
     <div class="panel-body">
         @if (! $statistics['available'])
